@@ -5,10 +5,15 @@ export async function criarProduto(dados) {
   return resultado;
 }
 
-
 export async function buscarProdutoPorId(id) {
   const resultado = await pg("produtos").where("id", id).first();
   return resultado;
 }
 
-
+export async function atualizarQuantidadeEstoque(id, novaQuantidade) {
+  const resultado = await pg("produtos")
+    .where("id", id)
+    .update("quantidade_estoque", novaQuantidade)
+    .returning("*");
+  return resultado;
+}
