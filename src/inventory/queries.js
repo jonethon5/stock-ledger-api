@@ -17,3 +17,10 @@ export async function atualizarQuantidadeEstoque(id, novaQuantidade) {
     .returning("*");
   return resultado;
 }
+
+export async function criarMovimentacao(dados) {
+  const movimentacoes = await pg("movimentacoes_estoque")
+    .insert(dados)
+    .returning("*");
+  return movimentacoes;
+}
