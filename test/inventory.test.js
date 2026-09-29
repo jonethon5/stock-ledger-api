@@ -5,10 +5,7 @@ import {
   criarMovimentacao,
 } from "../src/inventory/queries.js";
 
-// Estes testes rodam contra o Postgres de verdade (via connection.js), não
-// contra um mock — por isso dependem do container do banco estar de pé.
-// Cada teste cria o seu próprio produto, então não dependem de ordem nem de
-// dados deixados por um teste anterior.
+import { debitarEstoque } from "../src/inventory/service.js";
 
 test("Teste de busca de produos", async () => {
   const produtos = await criarProduto({
@@ -46,10 +43,32 @@ test("Teste para inserir uma nova movimentação em movimentacoes_estoque", asyn
     quantidade: 1,
   });
 
-  expect(movimentacao[0].produto_id).toBe(produto[0].id)
-  expect(movimentacao[0].tipo).toBe("saida")
-  expect(movimentacao[0].motivo).toBe("venda")
-  expect(movimentacao[0].quantidade).toBe(1)
+  expect(movimentacao[0].produto_id).toBe(produto[0].id);
+  expect(movimentacao[0].tipo).toBe("saida");
+  expect(movimentacao[0].motivo).toBe("venda");
+  expect(movimentacao[0].quantidade).toBe(1);
   expect(movimentacao[0].criado_em).toBeDefined();
-
 });
+
+test("debita com sucesso", async () => {
+  const produto = await criarProduto({
+    nome: "Camisa Polo",
+    preco: 95.99,
+    quantidade_estoque: 50,
+  });
+
+  const venda = await debitarEstoque(produto[0].id, 1);
+  expect(venda.estoqueAtualizado).toBe(49);
+});
+
+test("Falha ao debitar estoque", async () => {
+  const produto = await criarProduto({
+    nome: "Camisa Polo",
+    preco: 95.99,
+    quantidade_estoque: 50,
+  });
+
+  await expect(debitarEstoque(produto[0].id, 51)).rejects.toThrow();
+});
+
+
