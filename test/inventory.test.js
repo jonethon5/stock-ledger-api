@@ -5,6 +5,11 @@ import {
   criarMovimentacao,
 } from "../src/inventory/queries.js";
 
+// Estes testes rodam contra o Postgres de verdade (via connection.js), não
+// contra um mock — por isso dependem do container do banco estar de pé.
+// Cada teste cria o seu próprio produto, então não dependem de ordem nem de
+// dados deixados por um teste anterior.
+
 test("Teste de busca de produos", async () => {
   const produtos = await criarProduto({
     nome: "Camisa Polo",
