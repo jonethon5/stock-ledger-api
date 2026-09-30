@@ -17,7 +17,7 @@ export default {
       password: process.env.POSTGRES_PASSWORD,
     },
     migrations: {
-      // onde o Knex procura e cria os arquivos de migration
+      // pasta onde o Knex cria e procura os arquivos de migration
       directory: "./src/db/migrations",
     },
   },

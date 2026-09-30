@@ -7,7 +7,11 @@ import {
 
 import { debitarEstoque } from "../src/inventory/service.js";
 
-test("Teste de busca de produos", async () => {
+// Testes de integração: rodam contra o Postgres de verdade (via
+// connection.js), não contra um mock. Cada teste cria o seu próprio
+// produto, então não dependem de ordem nem de dados de um teste anterior.
+
+test("busca um produto pelo id depois de criá-lo", async () => {
   const produtos = await criarProduto({
     nome: "Camisa Polo",
     preco: 95.99,
@@ -19,7 +23,7 @@ test("Teste de busca de produos", async () => {
   expect(resultado.quantidade_estoque).toBe(produtos[0].quantidade_estoque);
 });
 
-test("Teste de atualizar quantidade de estoque", async () => {
+test("atualiza a quantidade em estoque de um produto", async () => {
   const produtos = await criarProduto({
     nome: "Camisa Polo",
     preco: 95.99,
@@ -29,7 +33,7 @@ test("Teste de atualizar quantidade de estoque", async () => {
   expect(atualizados[0].quantidade_estoque).toBe(498);
 });
 
-test("Teste para inserir uma nova movimentação em movimentacoes_estoque", async () => {
+test("registra uma movimentação de saída no histórico de estoque", async () => {
   const produto = await criarProduto({
     nome: "Camisa Polo",
     preco: 95.99,
@@ -50,7 +54,7 @@ test("Teste para inserir uma nova movimentação em movimentacoes_estoque", asyn
   expect(movimentacao[0].criado_em).toBeDefined();
 });
 
-test("debita com sucesso", async () => {
+test("debita estoque quando há quantidade suficiente", async () => {
   const produto = await criarProduto({
     nome: "Camisa Polo",
     preco: 95.99,
@@ -61,7 +65,7 @@ test("debita com sucesso", async () => {
   expect(venda.estoqueAtualizado).toBe(49);
 });
 
-test("Falha ao debitar estoque", async () => {
+test("rejeita o débito quando a quantidade pedida é maior que o estoque", async () => {
   const produto = await criarProduto({
     nome: "Camisa Polo",
     preco: 95.99,
@@ -71,4 +75,24 @@ test("Falha ao debitar estoque", async () => {
   await expect(debitarEstoque(produto[0].id, 51)).rejects.toThrow();
 });
 
+// Este é o teste de concorrência do roadmap (fim de semana 2), ainda com
+// só 10 débitos simultâneos — o plano pede 50 no critério de pronto.
+// debitarEstoque hoje não usa transação nem FOR UPDATE, então este teste é
+// o que deve expor a race condition: se ele passar de forma instável
+// (às vezes 40, às vezes um valor maior), é a prova de que o saldo final
+// pode ficar errado quando duas vendas acontecem ao mesmo tempo.
+test("10 débitos simultâneos no mesmo produto devem resultar no saldo correto", async () => {
+  const produto = await criarProduto({
+    nome: "Camisa Polo",
+    preco: 95.99,
+    quantidade_estoque: 50,
+  });
 
+  const vendas = Array.from({ length: 10 }, () =>
+    debitarEstoque(produto[0].id, 1),
+  );
+  const resultado = await Promise.all(vendas);
+  const produtoTeste = await buscarProdutoPorId(produto[0].id);
+
+  expect(produtoTeste.quantidade_estoque).toBe(40);
+});
