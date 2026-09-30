@@ -1,13 +1,14 @@
 import { config } from "dotenv";
-// Lê o .env e coloca as variáveis em process.env antes de montar a conexão.
-// Sem isso, host/user/senha chegariam como undefined.
+// Lê o .env e injeta as variáveis em process.env antes do Knex montar a conexão.
+// Sem isso, host/user/senha viriam undefined.
 config();
 
-// Configuração que o Knex CLI usa nos comandos de migration (migrate:latest,
-// migrate:rollback etc). Só existe "development" por enquanto.
+// Config lida pelo Knex CLI (migrate, seed) e pela conexão da aplicação.
+// Só existe o ambiente "development" por enquanto; produção/teste podem ganhar
+// blocos próprios depois, se precisar de outro banco.
 export default {
   development: {
-    client: "pg", // diz ao Knex para falar com Postgres usando o driver "pg"
+    client: "pg", // driver: usa o pacote "pg" para falar com o Postgres
     connection: {
       host: process.env.POSTGRES_HOST,
       port: process.env.POSTGRES_PORT,

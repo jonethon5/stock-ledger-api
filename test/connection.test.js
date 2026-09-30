@@ -8,3 +8,5 @@ test("conecta no banco e executa uma query SQL simples", () => {
     expect(result.rows[0].result).toBe(2);
   });
 });
+
+

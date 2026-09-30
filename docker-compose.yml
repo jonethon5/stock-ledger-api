@@ -1,3 +1,5 @@
+# docker compose up sobe os três serviços de uma vez: app (Node), postgres
+# (banco) e adminer (interface web pra inspecionar o banco em localhost:8080).
 services:
   app:
     build: .
@@ -9,16 +11,27 @@ services:
     depends_on:
       - postgres
     volumes:
+      # código local montado dentro do container: o nodemon detecta a
+      # mudança no arquivo e reinicia, sem precisar rebuildar a imagem.
       - .:/app
+      # preserva o node_modules instalado dentro do container, para o mount
+      # acima não sobrescrever com o node_modules (ou a ausência dele) do
+      # host.
       - /app/node_modules
 
   postgres:
     image: postgres:16
+    # a própria imagem do Postgres lê POSTGRES_PASSWORD/POSTGRES_DB do
+    # env_file para criar o usuário e o banco na primeira subida.
     env_file:
       - .env
     ports:
+      # 5433 no host (para não colidir com um Postgres local na 5432) mapeia
+      # para a porta padrão 5432 dentro do container.
       - "5433:5432"
     volumes:
+      # sem isso, os dados do banco seriam perdidos a cada
+      # `docker compose down` (o container é recriado do zero).
       - dados_do_banco:/var/lib/postgresql/data
 
   adminer:

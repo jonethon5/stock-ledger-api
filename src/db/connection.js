@@ -3,9 +3,10 @@ import knex from "knex";
 
 config();// Load environment variables from .env file
 
-// Instância única do Knex, usada por toda a aplicação (queries.js importa
-// esse "pg" e chama pg("produtos"), pg.raw(...) etc). Por baixo o Knex
-// mantém um pool de conexões — não abre uma conexão nova a cada query.
+// Instância única do Knex, compartilhada por toda a aplicação (queries.js
+// importa esse "pg" e usa como query builder: pg("produtos"), pg.raw(...) etc).
+// Por baixo, o Knex mantém um pool de conexões com o Postgres — não é uma
+// conexão nova a cada query.
 const pg = knex({
   client: "pg",
   connection: {
