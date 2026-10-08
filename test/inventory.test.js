@@ -3,7 +3,7 @@ import {
   criarProduto,
   atualizarQuantidadeEstoque,
   criarMovimentacao,
-} from "../src/inventory/queries.js"
+} from "../src/inventory/queries.js";
 import { debitarEstoque } from "../src/inventory/service.js";
 import pg from "../src/db/connection.js";
 // Testes de integração: rodam contra o Postgres de verdade (via
@@ -39,12 +39,15 @@ test("registra uma movimentação de saída no histórico de estoque", async () 
     quantidade_estoque: 500,
   });
 
-  const movimentacao = await criarMovimentacao({
-    produto_id: produto[0].id,
-    tipo: "saida",
-    motivo: "venda",
-    quantidade: 1,
-  }, pg);
+  const movimentacao = await criarMovimentacao(
+    {
+      produto_id: produto[0].id,
+      tipo: "saida",
+      motivo: "venda",
+      quantidade: 1,
+    },
+    pg,
+  );
 
   expect(movimentacao[0].produto_id).toBe(produto[0].id);
   expect(movimentacao[0].tipo).toBe("saida");
@@ -95,4 +98,28 @@ test("10 débitos simultâneos no mesmo produto devem resultar no saldo correto"
   const produtoTeste = await buscarProdutoPorId(produto[0].id, pg);
 
   expect(produtoTeste.quantidade_estoque).toBe(40);
+});
+
+test("não é possível alterar ou apagar uma movimentação já criada", async () => {
+  const produto = await criarProduto({
+    nome: "Camisa Polo",
+    preco: 95.99,
+    quantidade_estoque: 50,
+  });
+
+  const movimentacao = await criarMovimentacao(
+    {
+      produto_id: produto[0].id,
+      tipo: "saida",
+      motivo: "venda",
+      quantidade: 1,
+    },
+    pg,
+  );
+
+  await expect(
+    pg("movimentacoes_estoque")
+      .where("id", movimentacao[0].id)
+      .update({ quantidade: 2 }),
+  ).rejects.toThrow(/append-only/);
 });
