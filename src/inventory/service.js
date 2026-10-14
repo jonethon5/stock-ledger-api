@@ -23,10 +23,20 @@ import pg from "../db/connection.js";
 // fila.
 export async function debitarEstoque(produtoId, quantidade) {
   return pg.transaction(async (trx) => {
+    if (quantidade <= 0) {
+      throw new Error("quantidade deve ser maior que zero");
+    }
+
     const produto = await buscarProdutoPorId(produtoId, trx);
+
+    if (!produto) {
+      throw new Error("produto não encontrado");
+    }
+
     if (quantidade > produto.quantidade_estoque) {
       throw new Error("estoque insuficiente");
     }
+
     const estoqueAtualizado = produto.quantidade_estoque - quantidade;
     await atualizarQuantidadeEstoque(produtoId, estoqueAtualizado, trx);
 
