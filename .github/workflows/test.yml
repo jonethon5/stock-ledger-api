@@ -1,0 +1,53 @@
+name: Testes
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    # Mesmo Postgres do docker-compose.yml, como container de serviço.
+    # As credenciais são só deste banco descartável de CI, não as do .env.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: stock_ledger
+          POSTGRES_PASSWORD: stock_ledger
+          POSTGRES_DB: stock_ledger_test
+        ports:
+          - 5432:5432
+        # espera o banco aceitar conexões antes de rodar os steps
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    # connection.js e knexfile.js leem estas variáveis de process.env
+    env:
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: stock_ledger
+      POSTGRES_PASSWORD: stock_ledger
+      POSTGRES_DB: stock_ledger_test
+
+    steps:
+      - uses: actions/checkout@v5
+
+      # mesma versão do Dockerfile (node:22-alpine)
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # cria as tabelas e o trigger de append-only no banco de CI
+      - run: npx knex migrate:latest
+
+      - run: npm test
