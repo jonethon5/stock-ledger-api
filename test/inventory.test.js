@@ -123,3 +123,20 @@ test("não é possível alterar ou apagar uma movimentação já criada", async 
       .update({ quantidade: 2 }),
   ).rejects.toThrow(/append-only/);
 });
+
+
+test("rejeita o débito quando o produto não existe", async () => {
+  await expect(debitarEstoque(999999, 1)).rejects.toThrow();  
+});
+
+
+
+test("rejeita o débito quando a quantidade é zero ou negativa", async () => {
+  const produto = await criarProduto({
+    nome: "Camisa Polo",
+    preco: 95.99,
+    quantidade_estoque: 50,
+  });
+
+  await expect(debitarEstoque(produto[0].id, 0)).rejects.toThrow();
+});
