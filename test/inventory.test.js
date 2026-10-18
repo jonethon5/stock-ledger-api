@@ -84,20 +84,20 @@ test("rejeita o débito quando a quantidade pedida é maior que o estoque", asyn
 // Ele passar de forma consistente agora é a prova de que o lock está
 // funcionando: mesmo com 10 chamadas ao mesmo tempo, nenhuma lê o saldo
 // antes da anterior terminar de gravar.
-test("10 débitos simultâneos no mesmo produto devem resultar no saldo correto", async () => {
+test("50 débitos simultâneos no mesmo produto devem resultar no saldo correto", async () => {
   const produto = await criarProduto({
     nome: "Camisa Polo",
     preco: 95.99,
-    quantidade_estoque: 50,
+    quantidade_estoque: 100,
   });
 
-  const vendas = Array.from({ length: 10 }, () =>
+  const vendas = Array.from({ length: 50 }, () =>
     debitarEstoque(produto[0].id, 1),
   );
   const resultado = await Promise.all(vendas);
   const produtoTeste = await buscarProdutoPorId(produto[0].id, pg);
 
-  expect(produtoTeste.quantidade_estoque).toBe(40);
+  expect(produtoTeste.quantidade_estoque).toBe(50);
 });
 
 test("não é possível alterar ou apagar uma movimentação já criada", async () => {
